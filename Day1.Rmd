@@ -1,22 +1,19 @@
 <link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
 
-Extra material
+Getting Started
 =======
 
 We recommend that at some point soon following this tutorial, you watch the following [video tutorial for R from Google Developer](http://www.youtube.com/watch?v=iffR3fWv4xw&list=PLOU2XLYxmsIK9qQfztXeybpHvru-TrqAP).
 
 Basic R
 ========================================================
-
-Getting started
-----
 ### Interface of Rstudio
 
 ![alt text][R_studio]
 
 [R_studio]: https://lh3.googleusercontent.com/-fFe1VlFiVzA/TWvS0Cuvc3I/AAAAAAAALmk/RfFLB0h5dUM/s1600/rstudio-windows.png
 
-Items:
+Rstudio components:
 * Console
 * Script
 * Environment (will make sense later)
@@ -32,7 +29,7 @@ getwd()
 ```
 
 ```
-### setting "my working directory" as "~/work/r/nigeria_r_training/"
+# setting "my working directory" as "~/work/r/nigeria_r_training/"
 setwd("~/work/r/nigeria_r_training/")
 ```
 
@@ -50,7 +47,16 @@ Use two question marks to search for functions if you don't know the name:
 
 ### Reading data: read.csv
 
-.csv is the prefered data format in NMIS and in the data science space in general. Although there are functions in R to read other data formats, we recommend that one converts to csv prior to loading. Our motivations for using csv formats are similar to [this article's](http://dataprotocols.org/simple-data-format/#why-csv).
+There are many different data formats in wide use, each with it's own strengths and weaknesses. A few of the most common for use in R include:
+* .csv
+* .xlsx
+* .txt
+* .ncdf
+
+.csv is the prefered data format for importing into R. Although there are functions in R to read other data formats (a few examples, below), we recommend that you convert to csv prior to loading. Motivation for using csv formats can be found [here](http://dataprotocols.org/simple-data-format/#why-csv).
+
+For a more complete description of various data formats, refer [here] (http://cran.r-project.org/doc/manuals/r-release/R-data.html#Importing-from-other-statistical-systems).
+
 
 ```{r}
 sample_data <- read.csv("sample_health_facilities.csv", stringsAsFactors=FALSE)
