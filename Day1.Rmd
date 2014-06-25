@@ -45,21 +45,50 @@ Use two question marks to search for functions if you don't know the name:
 ??workingdirectory
 ```
 
-### Reading data: read.csv
+### Reading data
 
-There are many different data formats in wide use, each with it's own strengths and weaknesses. A few of the most common for use in R include:
+There are many different data formats in wide use, each with it's own purpose and limitations. A few of the most common for use in R include:
 * .csv
 * .xlsx
 * .txt
 * .ncdf
 
-.csv is the prefered data format for importing into R. Although there are functions in R to read other data formats (a few examples, below), we recommend that you convert to csv prior to loading. Motivation for using csv formats can be found [here](http://dataprotocols.org/simple-data-format/#why-csv).
+.csv is the prefered data format for importing into R. Although there are functions in R to read other data formats (a few examples, below), we recommend that you convert to csv prior to loading. Motivation for using csv is found [here](http://dataprotocols.org/simple-data-format/#why-csv).
 
-For a more complete description of various data formats, refer [here] (http://cran.r-project.org/doc/manuals/r-release/R-data.html#Importing-from-other-statistical-systems).
+You can also load data directly from other statistical packages, including: EpiInfo, Minitab, S-PLUS, SAS, SPSS, Stata and Systat. For a more complete description of data formats and their compatability with R, refer [here] (http://cran.r-project.org/doc/manuals/r-release/R-data.html#Importing-from-other-statistical-systems).
 
+```{r import-data, cache=TRUE}
+### csv
+# Nigeria facility inventory
+health <- read.csv("sample_health_facilities.csv", stringsAsFactors=FALSE)
+str(health)
 
-```{r}
-sample_data <- read.csv("sample_health_facilities.csv", stringsAsFactors=FALSE)
+### txt 
+# Daily mean temperature for Delhi, India 1995-2013 in degrees Farenheit
+temps<-read.table(file="Daily_Temperature_1995-2013_Delhi.txt", header=FALSE, colClasses=c("factor", "factor","factor","numeric"))
+str(temps) # look at the structure of the data
+
+### xlsx 
+# Population of urban agglomerations with 750,00 inhabitants or more, 1950-2025 (UN 2011)
+if (!require(xlsx)) install.packages('xlsx')
+library(xlsx)
+pop=read.xlsx(file="/Users/elliotcohen/Dropbox/data/Urbanization/UN_2011_Population-Cities_Over_750k.xlsx",
+              sheetName="CITIES-OVER-750K",
+              as.data.frame=TRUE,header=TRUE,check.names=TRUE,
+              startRow=13, endRow=646, colIndex=c(1:23))
+              
+### scan directly from a website
+# list of countries by continent
+countries<-scan(file="/Users/elliotcohen/Dropbox/data/Urbanization/countrylist.txt",
+                what="charachter", sep="\n",
+                          blank.lines.skip=TRUE)
+
+### fixed width
+# list of cities from Hadley Urban Analysis
+file<-"http://www.metoffice.gov.uk/hadobs/urban/data/Station_list1.txt"
+stns<-read.fwf(file, widths=c(5,18,7,7), header = FALSE, sep = "\t", skip = 5, strip.white=TRUE)
+names(stns)<-c("WMONo", "Stn.name","Lat","Long")
+
 ```
 
 This command calls read.csv on a filename, with an extra named argument, `stringsAsFactors`. The result is then assigned to sample_data. This command is equivalent to running `sample_data = read.csv(sample_health_facilities.csv, stringsAsFactors=FALSE)`, but the preferred syntax for assignment in R is `<-` (ie, `<` followed by `-`.)
