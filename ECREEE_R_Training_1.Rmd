@@ -1,0 +1,116 @@
+---
+title: "Introduction to Data Analysis with R"
+author: "Elliot Cohen, Sustainable Engineering Lab, Columbia University"
+date: "June 25, 2014"
+output: html_document
+---
+
+<link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+We recommend that at some point soon following this tutorial, you watch the following [video tutorial for R from Google Developer](http://www.youtube.com/watch?v=iffR3fWv4xw&list=PLOU2XLYxmsIK9qQfztXeybpHvru-TrqAP).
+
+****************
+Getting Started
+-----------------
+### Interface of Rstudio
+![alt text][R_studio]
+
+[R_studio]: https://lh3.googleusercontent.com/-fFe1VlFiVzA/TWvS0Cuvc3I/AAAAAAAALmk/RfFLB0h5dUM/s1600/rstudio-windows.png
+
+Interface components:  
+* Console  
+* Script  
+* Environment (will make sense later)  
+* Help, Plots  
+
+### Working directory 
+The "working directory" is where R will look to read/write files.
+
+```{r}
+# get current working directory 
+getwd()
+
+# set working directory
+setwd("~/github/Nigeria_R_Training")
+```
+
+### Get help!
+Before we get any further, lets see how to get help. You can go to the "Help" tab in R-studio (right-hand-side bottom), or if you know the function to get help on, just use a question mark followed by the function name.
+```
+?getwd
+```
+
+Use two question marks to search for functions if you don't know the name:
+```
+??workingdirectory
+```
+
+### Reading data
+There are many different data formats available, each with its own purpose, virtues and limitations. A few of the most common to R include:  
+* .csv  
+* .xlsx  
+* .txt  
+* .ncdf  (we will cover this in Advanced R)
+
+.csv is the prefered data format for importing into R. Although there are functions in R to read other data formats (a few examples, below), we recommend that you convert to csv prior to loading. Motivation for using csv is found [here](http://dataprotocols.org/simple-data-format/#why-csv).
+
+You can also load data directly from other statistical packages such as EpiInfo, Minitab, S-PLUS, SAS, SPSS, Stata and Systat. For a more complete description of data formats and their compatability with R, refer [here](http://cran.r-project.org/doc/manuals/r-release/R-data.html#Importing-from-other-statistical-systems).
+
+```{r import-data, cache=TRUE}
+### csv
+file<-"sample_health_facilities.csv" # Nigeria facility inventory
+sample_data <- read.csv(file) # read the .csv file
+str(sample_data) # look at the data structure
+
+### txt
+file<-"Daily_Temperature_1995-2013_Delhi.txt" # Daily mean temperature for Delhi, India 1995-2013 in degrees Farenheit
+temps<-read.table(file,
+                  header=FALSE,
+                  colClasses=c("factor", "factor","factor","numeric")
+                  )
+names(temps)<-c("Month","Day","Year","Temp") # assign column names
+str(temps) # look at the data structure
+
+### xlsx 
+if (!require(xlsx)) install.packages('xlsx') # reading .xlsx is not native to R, so we need a special package to do it.  This code will install the package if you do not already have it.
+library(xlsx) # load the library
+file<-"UN_2011_Population_Cities_Over_750k.xlsx" # Population of urban agglomerations with 750,00 inhabitants or more, 1950-2025 (UN 2011)
+pop=read.xlsx(file,
+              sheetName="CITIES-OVER-750K",
+              as.data.frame=TRUE,
+              header=TRUE,
+              check.names=TRUE,
+              startRow=13, endRow=646, colIndex=c(1:23)
+              )
+str(pop) # looks at the data structure
+
+### scan directly from a website
+file<-"http://download.geonames.org/export/dump/countryInfo.txt" # list of countries
+countries<-scan(file,
+                what=list("","","","",""),
+                flush=TRUE,
+                comment.char="#",
+                sep = "\t", 
+                strip.white=TRUE,
+                allowEscapes=TRUE)
+str(countries)
+
+### fixed width
+file<-"http://www.metoffice.gov.uk/hadobs/urban/data/Station_list1.txt" # list of cities from Hadley Urban Analysis
+stns<-read.fwf(file,
+               widths=c(5,18,7,7),
+               header = FALSE,
+               sep = "\t",
+               skip = 5,
+               strip.white=TRUE)
+names(stns)<-c("WMONo", "Stn.name","Lat","Long") # assign column names
+str(stns) # look at the data structure
+```
+
+
+### Sample data
+continue here....

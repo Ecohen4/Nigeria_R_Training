@@ -1,22 +1,19 @@
 <link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
 
-Getting Started
-=======
-
-TEST
-========
+Introduction to Data Analysis with R
+=================
 
 We recommend that at some point soon following this tutorial, you watch the following [video tutorial for R from Google Developer](http://www.youtube.com/watch?v=iffR3fWv4xw&list=PLOU2XLYxmsIK9qQfztXeybpHvru-TrqAP).
 
-Basic R
-========================================================
+Getting Started
+-----------------
 ### Interface of Rstudio
 
 ![alt text][R_studio]
 
 [R_studio]: https://lh3.googleusercontent.com/-fFe1VlFiVzA/TWvS0Cuvc3I/AAAAAAAALmk/RfFLB0h5dUM/s1600/rstudio-windows.png
 
-Rstudio components:
+Interface components:
 * Console
 * Script
 * Environment (will make sense later)
@@ -27,16 +24,15 @@ Rstudio components:
 R has a notion of a "working directory". This is the directory that R can load files directly from.
 
 ```{r}
-# getting the current working directory 
+# get the current working directory 
 getwd()
+
+# set "my working directory"
+#setwd("~/work/r/nigeria_r_training/")
+setwd("~/github/Nigeria_R_Training")
 ```
 
-```
-# setting "my working directory" as "~/work/r/nigeria_r_training/"
-setwd("~/work/r/nigeria_r_training/")
-```
-
-### Getting help!
+### Get help!
 
 Before we get any further, lets see how to get help. You can go to the "Help" tab in R-studio (right-hand-side bottom), or if you know the function to get help on, just use a question mark followed by the function name.
 ```
@@ -58,42 +54,46 @@ There are many different data formats in wide use, each with it's own purpose an
 
 .csv is the prefered data format for importing into R. Although there are functions in R to read other data formats (a few examples, below), we recommend that you convert to csv prior to loading. Motivation for using csv is found [here](http://dataprotocols.org/simple-data-format/#why-csv).
 
-You can also load data directly from other statistical packages, including: EpiInfo, Minitab, S-PLUS, SAS, SPSS, Stata and Systat. For a more complete description of data formats and their compatability with R, refer [here] (http://cran.r-project.org/doc/manuals/r-release/R-data.html#Importing-from-other-statistical-systems).
+You may also load data directly from other statistical packages such as EpiInfo, Minitab, S-PLUS, SAS, SPSS, Stata and Systat. For a more complete description of data formats and their compatability with R, refer [here] (http://cran.r-project.org/doc/manuals/r-release/R-data.html#Importing-from-other-statistical-systems).
 
 ```{r import-data, cache=TRUE}
-# navigate to working directory... 
-#setwd("~/github/Nigeria_R_Training")
-
 ### csv
 # Nigeria facility inventory
-health <- read.csv("sample_health_facilities.csv", stringsAsFactors=FALSE)
-str(health)
+sample_data <- read.csv("sample_health_facilities.csv", stringsAsFactors=FALSE)
+str(sample_data)
 
 ### txt 
 # Daily mean temperature for Delhi, India 1995-2013 in degrees Farenheit
 temps<-read.table(file="Daily_Temperature_1995-2013_Delhi.txt", header=FALSE, colClasses=c("factor", "factor","factor","numeric"))
-str(temps) # look at the structure of the data
+names(temps)<-c("Month","Day","Year","Temp")
+temps$Date<-as.Date(as.character(paste(temps$Year, temps$Month, temps$Day,sep="-")), "%Y-%m-%d")
+range(temps$Date)                  # "1995-01-01" "2013-05-06"
+temps$City<-"DELHI"
+temps$Temp[temps$Temp==-99]<-NA     # remove erroneous entries...
+temps$Temp<-(temps$Temp-32)*(5/9)   # convert to Celcius
+str(temps)
 
 ### xlsx 
 # Population of urban agglomerations with 750,00 inhabitants or more, 1950-2025 (UN 2011)
 if (!require(xlsx)) install.packages('xlsx')
 library(xlsx)
-pop=read.xlsx(file="UN_2011_Population-Cities_Over_750k.xlsx",
+pop=read.xlsx(file="UN_2011_Population_Cities_Over_750k.xlsx",
               sheetName="CITIES-OVER-750K",
               as.data.frame=TRUE,header=TRUE,check.names=TRUE,
               startRow=13, endRow=646, colIndex=c(1:23))
-              
+str(pop)
+
 ### scan directly from a website
-# list of countries by continent
-countries<-scan(file="Urbanization/countrylist.txt",
-                what="charachter", sep="\n",
-                          blank.lines.skip=TRUE)
+# country metadata
+countries<-scan("http://download.geonames.org/export/dump/countryInfo.txt", what=list("","","","",""), flush=TRUE, comment.char="#", sep = "\t", strip.white=TRUE, allowEscapes=TRUE)
+str(countries)
 
 ### fixed width
 # list of cities from Hadley Urban Analysis
 file<-"http://www.metoffice.gov.uk/hadobs/urban/data/Station_list1.txt"
 stns<-read.fwf(file, widths=c(5,18,7,7), header = FALSE, sep = "\t", skip = 5, strip.white=TRUE)
 names(stns)<-c("WMONo", "Stn.name","Lat","Long")
+str(stns)
 
 ```
 
@@ -293,11 +293,13 @@ install.packages("plyr")
 To load the library (similar to `import` in other languages), you use the `library` function:
 
 ```{r}
+if (!require(plyr)) install.packages('plyr')
 library(plyr)
 ```
   
 R packages (or libraries) contain additional specialized functions for different purposes. `plyr` is one of our favorites, and contains very useful functions for aggregating data that we will explore soon. Be sure that the package you are trying to load is installed on your computer.
 ```{r}
+if (!require(eaf)) install.packages('eaf')
 library(eaf)
 ```
 
