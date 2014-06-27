@@ -7,7 +7,7 @@ output: html_document
 
 <link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
 
-```{r initialize}
+```{r initialize, include=FALSE}
 setwd("~/github/Nigeria_R_Training")
 
 library(knitr)
@@ -347,7 +347,7 @@ Creating new data frames from old data frames
 ### Subset
 Subset data to a specific period of interest:
 ```{r}
-hot<-subset(data, temps > 90)                    # days with avg. temp > 90 deg. F
+hot<-subset(data, Temp > 90)                    # days with avg. temp > 90 deg. F
 y95<-subset(data, Year=="1995")                  # days in the year 1995 only 
 winter<-subset(data, Month %in% c("12","1","2")) # days contained in the winter months only
 
