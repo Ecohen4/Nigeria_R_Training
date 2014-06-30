@@ -1,10 +1,11 @@
 ---
-title: "Introduction to R"
-author: "Elliot Cohen, Columbia University"
+title: "R Basic Training"
+author: Elliot Cohen, Sustainable Engineering Lab, Columbia University
 date: "June 25, 2014"
-output: html_document
+output: 
+  html_document:
+    toc: TRUE
 ---
-
 <link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
 
 ```{r initialize, include=FALSE}
@@ -26,9 +27,9 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
 
-R itself is a programming language and environment for statistical computing and graphics. R is free, open-source, and supported by a large community of active researchers and analysts. R (with R Markdown) is quickly becoming the standard for reproducible research across academia and industry.
+R is a programming language and environment for statistical computing and graphics. R is free, open-source, and supported by a large community of active researchers and analysts. R (with R Markdown) is quickly becoming the standard for reproducible research in academia and industry.
 
-There are many, many R tutorials available online, and we recommend you refer to these often for supplimentary information.  
+There are many, excellent R tutorials available online, and we recommend you refer to these often for supplimentary information:  
 * [R Project for Statistical Computing](http://cran.r-project.org/doc/manuals/R-intro.html#The-scan_0028_0029-function)  
 * [R Tutor](http://www.r-tutor.com/)  
 * [Quick R](http://www.statmethods.net/)  
@@ -36,7 +37,7 @@ There are many, many R tutorials available online, and we recommend you refer to
 
 ****************
 Part 1: Getting Started
------------------
+------------------------
 ### Interface of Rstudio
 ![alt text][R_studio]
 
@@ -56,9 +57,27 @@ Check the current working directory
 getwd()
 ```
 Set the working directory
-```{r}
+```{r setwd}
 setwd("~/github/Nigeria_R_Training")
 ```
+
+### Libraries
+R is a programming languages, so it allows you to write "modules" or "libraries" that can be distributed to others. These are called packages in R. To install packges in R, use `install.packages` with quoted package name: 
+```
+install.packages("plyr")
+```  
+
+To load the library (similar to `import` in other languages), you use the `library` function with no quotes: ```library(plyr)```
+Any library you wish to use, you will need to load at the start of each new R session. You will only need to install the package once, hence the `if` command below.  Let's install and load two of our favorite libraries: `plyr` and `ggplot2`.
+```{r libraries}
+if (!require(plyr)) install.packages('plyr')
+library(plyr)
+
+if (!require(ggplot2)) install.packages('ggplot2')
+library(ggplot2)
+```
+
+`plyr` contains very useful functions for aggregating data. `ggplot2` creates professional-looking figures with easy-to-interpret (if not verbose) function calls. We will learn how to use both of these libraries in-depth in the next tutorial.
 
 ### help!
 Before we get any further, lets see how to get help. You can go to the "Help" tab in R-studio (right-hand-side bottom), or if you know the function to get help on, just use a question mark followed by the function name.
@@ -71,7 +90,7 @@ Use two question marks to search for functions if you don't know the name:
 ??workingdirectory
 ```
 
-### Import data
+### Importing data
 There are many different data formats available, each with its own purpose, virtues and limitations. A few of the most common to R include:  
 * .csv  
 * .xlsx  
@@ -105,12 +124,6 @@ temps<-read.table(file,
                   colClasses=c("factor", "factor","factor","numeric")
                   )
 names(temps)<-c("Month","Day","Year","Temp") # assign column names
-
-## MOVE THIS LATER... BUT DON'T FORGET TO INCLUDE
-temps$Date<-as.Date(as.character(paste(temps$Year, temps$Month, temps$Day,sep="-")), "%Y-%m-%d")
-range(temps$Date)                  # "1995-01-01" "2013-05-06"
-temps$Temp[temps$Temp==-99]<-NA    # remove erroneous entries...
-temps<-na.omit(temps)
 ```
 
 #### .xlsx
@@ -143,7 +156,7 @@ countries<-scan(file,
 
 #### Fixed width data formats
 Finally, we may have fixed width data to work with.  No problem--there's a funciton for that.
-```{r fixed, cache=TRUE}
+```{r fixed-width, cache=TRUE}
 file<-"http://www.metoffice.gov.uk/hadobs/urban/data/Station_list1.txt" # list of cities from Hadley Urban Analysis
 stns<-read.fwf(file,
                widths=c(5,18,7,7),
@@ -153,41 +166,79 @@ stns<-read.fwf(file,
                strip.white=TRUE)
 names(stns)<-c("WMONo", "Stn.name","Lat","Long") # assign column names
 ```
+  
+****************
+Part 2: Data Structures
+------------------------
+Now that we learned how to import data, let's get familiar with it. 
 
-Part 2: Getting To Know Your Data
------------------
-Now that we learned how to import data, let's take a look at it. The first step of any data analysis is to formulate a general impression of the data, including:   
-1. What it contains (structure)  
-2. What it looks like (vizualization)  
-3. What's missing (completeness)  
-4. The period of record (length)  
-5. The veracity of measurements/observations (quality).  
+The first step of any analysis is to formulate a general impression of the data, including:   
+1. How is the data *organized*? (structure)  
+2. What *type* of data is it? (class)  
+3. How *big* is the data? (dimensions) 
+4. How *complete* is the data? (missing values)  
+5. How long is the *period* of record? (timeseries data)        
+6. Do the *values* make sense? (benchmarking)  
+7. What does the data *look* like? (vizualization)  
 
-As a working example, let's return to the temperature data `temps` imported above. Let's rename it as simply `data` so you get the idea that these principles are general and apply to almost any quantitative data.
-```{r}
+As a working example, let's use the temperature data ('temps') imported previously. Let's assign `temps` to a new object simply called `data` to convey that these principles are general and can apply to any dataset.  The preferred syntax for assigning a value or object is a left arrow:
+```{r assign}
 data<-temps
 ```
 
 ### structure
-First, we use the `head` and `str` functions to see what the data looks like.  `head()` returns the first 6 records.  Similarly, `tail()` returns the last 6. Right away we see that "temps" is tabular data containing 4 columns (Month, Day, Year and Temp).  The "Temp" column (`temps$Temp`) contains the observed (or calculated) data of interest -- average daily temperature for each Month-Day-Year combination. Later when we introduce the `plyr` package for split-apply-combine data analysis, manipulating combinations of attribute variables (e.g. Month, Day, Year) will become a key concept. 
+First, we use the `head` and `str` functions to see what the data looks like. `head()` returns the first 6 records.  Similarly, `tail()` returns the last 6. Right away we see this is tabular data with 4 columns (Month, Day, Year and Temp). The "Temp" column (`data$Temp`) contains the observed (or calculated) data of interest -- average daily temperature for each Month-Day-Year combination. 
+
+[Later when we introduce the `plyr` package for split-apply-combine data analysis, we will learn how to summarize and manipulate data by combinations of identifying variables (in this case, Month, Day, Year).]
+
 ```{r}
 head(data)
 ```
-Similarly, you can click on the name `data` in the Environment panel on the top-left in R-studio, and you will see the data rendered in spreadsheet format.
+Similar to `head`, you can click on the name `data` in the Environment panel on the top-left in R-studio, and you will see the data rendered in spreadsheet format.
 
-`str()` is another useful way to get a feel for the data.  While `head` is helpful to the human eye, `str ` provides a more programming-oriented view of the data. `str` returns the type of object (in this case, a data frame--more on that later), the number of observations (rows) and variables (columns) contained in the dataframe, and they type of data in each column (e.g. numeric, character, etc...).
+`str()` is another useful way to get a feel for the data. While `head` is great for visual inspection, `str ` provides a more programming-oriented view of the data. `str` returns the object structure (in this case, a `data.frame`--more on that soon), the number of observations (rows), the number of variables (columns), and the class of each variable (e.g. numeric, integer, complex, character, logical, list, raw or expression).
 ```{r}
 str(data)
 ```
 
+### class
+Every element is R has a data type, also known as a `class`. Let's look at a few simple examples:
+```{r}
+class(1)
+class(TRUE)
+class('Suya')
+```
+
+Class definitions extend to vectors, not only individual elements (e.g. values). For example:
+```{r}
+class(data$Year)
+class(data$Temp)
+```
+
+The core class definitions in R include:
+  1. numeric  
+  2. integer  
+  3. complex  
+  4. character  
+  5. logical  
+  6. list  
+  7. raw  
+  6. expression  
+  8. factor  
+    * factor is a generic data type used as an alternative to any of the above. Useful when keeping track of a limited set of recurring values within a vector in a `data.frame`.  
+    * Beware there are challenges with factor => integer/numeric conversions. We'll talk about this later.  
+    * For additional information on working with factors in your data: [More information on Factors](http://www.statmethods.net/input/datatypes.html)  
+
+A note: `NA` (_Not Available_) is a internal value in R, and can be of any type. `NA` indicates a missing value.  More on this later.  
+
 Before proceeding, let's delve more into dataframes, as they are a central concept in R.
 
-### data.frame
+### data frames
 A `data.frame` is like a rectangular `matrix` containing rows and columns, but with the flexibility to include non-numeric values (e.g. character strings and factors).  For example, a `data.frame` may contain information for a set of individuals (e.g. the people in this room), with each row (record) representing a different individual.  Each column would contain a piece of information about that individual, such as name, age, nationality, occupation, favorite ice cream, etc...  
 
 Our sample `data.frame` contains temperature measurements over time for a single location. Each row represents a different time-stamp, identified by a unique day-month-year combination (first three columns). The fourth column contains the observed or calculated temperature measurement itself.
 
-#### size
+### dimensions
 You can check the dimensions of a dataframe, matrix or list using the `dim` function:
 ```{r}
 dim(data)
@@ -201,60 +252,42 @@ ncol(data)
 
 As a convention in many larger geophysical datasets (e.g. global weather station networks), it is common practice to have locations represented as columns and time represented as rows.
 
-#### names
-Names are critical in R. It is always good practice to call/retrieve/manipulate data by its name to be sure you know what you're working with. To check the column names of a `data.frame`, we use the `colnames` function, or simply, the `names` function:
+### time series
+For time series data (whenever observations are associated with a timestamp), it is helpful to create a 'Date' or `POSIXct` variable to keep track of time. `Date` class objects are excellent for going back and forth between Date formats, e.g., Year-Month-Day to Day-Month-Year or Week-Day-Year, etc... `POSIXct` are for sub-daily timekeeping, down to a fraction of a second.  `POSIXct` is the ultimate class for nuanced timekeeping, including proper handling of time-zones, leap-years, and much more.
+```?POSIXct```
+
+In this tutorial, our data is daily (not sub-daily), so a `Date` object is sufficient rather than `POSIXct`. Let's create a `Date` object from the Year-Month-Day variables already contained in `data`.
+
+```{r Date}
+data$Date<-as.Date(as.character(paste(data$Year, data$Month, data$Day,sep="-")), "%Y-%m-%d")
+range(data$Date)                  # "1995-01-01" "2013-05-06"
+```
+
+### names
+Names are critical in R. It is always good practice to call/retrieve/manipulate data by its name (rather than column number) to be sure you know what you're working with. To check the names of columns in a `data.frame`, we use the `colnames` function, or simply, the `names` function:
 
 ```{r message=FALSE}
 colnames(data)
 names(data)
 ```
 
-To call a particular column within a data.frame, we use the syntax: data.frame$column.  
+To retrieve a particular column within a data.frame, we use the syntax: data.frame$column.  
 Alternatively, we use the syntax: data.frame[row number, column number]. 
-Again we can use the `head` function to retrieve the first 6 records and supress the rest.
+Again we can use the `head` function to show the first 6 records and supress the rest.
 ```{r}
 head(data$Temp)  # use head() to look at the first 6 records.
 head(data[, "Temp"])
 ```
 
 Review Questions:
- * What are the dimensions of `data`?
- * Did you count to get your answer? If so, how could you get your answer from R?
- * How many columns of data did we get out? How would you check in R?
- * Can you change the number of rows that `head` outputs? How would you find out?
- * Can you create a new data.frame, called `small_sample`, which is just the first 10 rows of `data`?
+ * What are the dimensions of `data`?  
+ * Did you count to get your answer? If so, how could you get your answer from R?  
+ * How many columns of data did we get out? How would you check in R?  
+ * Can you change the number of rows that `head` outputs? How would you find out?  
+ * Can you create a new data.frame, called `small_sample`, which is just the first 10 rows of `data`?  
 
-### Data types in R
-Every value is R has a data type. Let's look at a few simple examples:
-```{r}
-class(1)
-class(TRUE)
-class('Suya')
-```
-
-In R, each column has a single type. Example:
-```{r}
-class(data$Year)
-class(data$Temp)
-```
-
-The core types in R are:
-  1. numerical
-  2. integer
-  3. boolean
-  4. character
-  5. factors
-    * Generic data type used as alternative to any of the above. Useful when keeping track of a limited set of recurring values within a `data.frame`.
-    * Bbeware there are challenges with factor => integer/numeric conversions. We'll talk about this later.
-    * For additional information on working with factors in your data: [More information on Factors](http://www.statmethods.net/input/datatypes.html)
-
-A note: `NA` or __Not Available__ is a internal value in R, and can be of any type. Checking for NAs is good practice with any dataset. NA generally means 'missing value' or 'undefined value'. This can happen for many reasons. For example, malfunctioning equipment can lead to missing values in observational records. Alternatively, attempting a non-sensical operation will return `NA`, for example, trying to coerse the word "ice cream" into a numeric value.
-```{r}
-as.numeric("ice cream")
-```
-
-### Rows of a data frame
-So far we have focused on the columns of a `data.frame`. Now let's explore rows. A row in our data set represents one record.
+### records
+So far we have focused on the columns of a `data.frame`. Now let's explore rows. A row in our data set represents one record. Records are also referred to as cases, depending on context and convention.  Several of the most useful libraries and functions in R expect data of this format: Rows are observations and columns are variables. For example, `plyr` and `ggplot`, which we will introduce later for [split-apply-combine](http://www.jstatsoft.org/v40/i01/) and [vizualization](http://docs.ggplot2.org/current/), respectively.
 
 NOTE: Indexing starts at 1 in R, not 0. There is no 0th item. 
 
@@ -267,10 +300,10 @@ small_sample[5, ] # the fifth row
 
 Question: what do you think `class(small_sample[1,])` is?
 
-### Disecting a `data.frame`
+### dissecting a data frame
 For a `data.frame`, the [,] operator selects one or more rows or columns. The syntax is `data.frame[row, col]`.
 
-The simplest example; retrieve the 4th row and 5th column:
+The simplest example: Retrieve the 4th row and 5th column:
 ```{r}
 small_sample[4, 5]
 ```
@@ -278,23 +311,111 @@ small_sample[4, 5]
 In R (like in python), the `:` operator is an operator for making a list of numbers.
 ```{r}
 1:5
-small_sample[4:6, 1:5]
+small_sample[4:7, 1:5]
 ```
 
 Note that the selectors for our [,] operator don't need to be integers. What do the following do?
 ```
 small_sample[4:6, 'Temp']
-small_sample[4:6, c('Day', 'Month',"Year")]
+small_sample[4:6, c('Day','Month',"Year")]
+```
+Let's see if your right...
+```{r}
+small_sample[4:6, 'Temp']
+small_sample[4:6, c('Day','Month',"Year")]
+```
+We haven't seen `c` before. What does `c` do?
+    
+****************
+Part 3: Handling Real-World Data
+------------------------
+### missing values
+Most large data sets will invariably have some missing data. This can happen for many reasons. For example, malfunctioning equipment can lead to missing values in observational records. This may be recorded as "NA", "-999", "10e-30" or simply a blank " ", depending on the specific data protocal. It is **good practice to use `NA`** rather than blanks or numeric substitutes for missing data to avoid ambiguity. 
+
+`NAs` can also be introduced into a dataset by attempting a non-sensical operation. For example, trying to coerse the word "ice cream" into a numeric value will result in `NA`:
+```{r}
+as.numeric("ice cream")
 ```
 
-We haven't seen `c` before. What does `c` do?
+R distinguishes between `NA` ('not available') and `NaN` ('not a number'). `NaN` is reserved for numeric and complex data types only, whereas `NA` can apply to any class of variables. A numeric operation that is correct in syntax but has no mathematical meaning will return `NaN`, for example, dividing 0 by 0:
+```{r NaN}
+0/0
+```
 
-### Summary statistics
+Because `NAs` may exist in the raw data _or_ may be introduced by accident, it is good practice to check for them often.  In particular, immediately after importing a data set and then again after any major data manipulations.  The function `is.na` indicates which elements are missing.  The function `is.na` will return a logical value for each element of the object passed into the function. Therefore, we recommend taking the `sum` of `is.na` to count _how many NAs_ you're dealing with instead of returning the entire (and potentially very long) logical vector.
+```{r}
+is.na(c(1,2,3,NA,5))   
+sum(is.na(c(1,2,3,NA,5)))
+```
+
+In the simple example above, we see there are exactly 3 NA, which makes sense because we put them there.  Now let's apply the same concept to the temperature dataset.
+```{r is.na}
+# count the number of NAs in the temperature dataset
+sum(is.na(data))
+
+# show the NAs in the temperature dataset, if any...
+data[which(is.na(data)), ]
+
+# combining these two lines of code: Are there any NA? If so, where?
+if (sum(is.na(data))>0) data[which(is.na(data)), ] else
+  print("no missing values")
+```
+  
+We didn't find any `NA`, so does that mean there are no missing values?  
+Let's look at a summary of the data to see if the numbers make sense. Recall, the temperature measurements are in degrees Fahrenheit. As a reference, room temperature is 68-72 F., a hot summer day in Delhi can reach 115 F., and a cold winter day can drop below freezing (32 F.)
+```{r}
+summary(data$Temp)
+range(data$Temp)
+```
+Does that look right based on what we would expect for Delhi? 
+
+The -99 values could not possibly be real unless these temepratures were recorded at the top of Mt. Everest or in Antarctica in the dead of winter, which they were not. Let's remove them as erroenous.
+```{r}
+# assign NA to elements in the 'Temp' column with values equal to -99
+data$Temp[data$Temp==-99]<-NA
+
+# count how many NA there are now...
+sum(is.na(data$Temp))
+
+# remove them from the data...
+data<-na.omit(data)
+
+# re-check for NA...
+sum(is.na(data))
+
+# re-check the summary statistics
+summary(data$Temp)
+range(data$Temp)
+```
+Now the temperatures values make intuitive sense!
+
+**Note**: In general, we recommend being judicious with the `na.omit` function as you may lose more information than necessary.  `na.omit` will omit the entire row (e.g. record) if there are any `NA` elements in that row. Depending on the situation, you may want to first try resolving any `NA` in your data before simply omitting them. That said, if you have *BIG* data and just a few `NA`, it's probably fine to simply use `na.omit`. 
+
+Similar to `is.na`, you can check for `complete.cases`.  `is.na` returns a logical for each *element* whereas `complete.cases` returns a logical for each *case* (row).
+```complete.cases(data)```
+
+Putting it all together, you may find it useful to write a short function to do all your NA checks and complete record checks without having to repeat lines of code. We'll see this again later when we introduce writing functions in R.
+```{r check}
+check<-function(data){
+  NAs<-sum(is.na(data))
+  print(paste("NAs:", NAs)) # count NA's
+  if (NAs>0) data1[which(is.na(data)), ] # Show NA's, if any.
+  cc<-complete.cases(data)  # logical for each case (row)
+  print(paste("Complete Cases:", all(cc)))  # Given a set of logical values, are all TRUE?
+  }
+```
+
+Then when you want to use your `check` function, simply call it and pass the object you wish to check.
+```{r}
+check(data)
+```
+
+### summary statistics
 R is also called the "the R project for stastical computing. The power of R is in data analysis and statistics, which is why we are working with it. Let's start exploring some of R's very basic statistic functionalities.
 
 The first set of functions will just give you a simple `summary` of the values in a certain column. There are two useful functions for this:
-  * __table()__ should be used for character (string) or categorical (factor) variables
-  * __summary()__ should be used for numerical or boolean variables
+* `table` should be used for character (string) or categorical (factor) variables  
+* `summary` should be used for numerical or boolean variables  
   
 ```{r}
 table(data$Month)
@@ -309,8 +430,7 @@ Questions:
  * What is different between table and summary for numerical variables?
  * What is different between table and summary for boolean ('logical') variables?
 
-#### Mean, Standard Deviation
-
+### mean, standard deviation
 Calculating the mean is easy, but it does require some care. There are many numerical functions that return `NA` unless `na.rm` is passed as true, if there are any NAs in your data:
 ```{r}
 mean(data$Temp) # 5-yr average daily temperature
@@ -319,32 +439,10 @@ mean(data$Temp, na.rm=TRUE)  # same as above but remove missing values first.
 What do you think the function for calculating standard deviation is? How would you find out?
 
 
-Libraries
----------
-R is a programming languages, so it allows you to write "modules" or "libraries" that can be distributed to others. These are called packages in R. To install packges in R, use `install.packages` with quoted package name: 
-```
-install.packages("plyr")
-```   
-
-To load the library (similar to `import` in other languages), you use the `library` function:
-
-```{r}
-if (!require(plyr)) install.packages('plyr')
-library(plyr)
-```
-  
-R packages (or libraries) contain additional specialized functions for different purposes. `plyr` is one of our favorites, and contains very useful functions for aggregating data that we will explore soon. Be sure that the package you are trying to load is installed on your computer.
-```{r}
-if (!require(eaf)) install.packages('eaf')
-library(eaf)
-```
-
-Question: what should you do if you see this error?
-
-Creating new data frames from old data frames
----------------------
-
-### Subset
+****************
+Part 4: Intro to Analysis
+------------------------
+### subset
 Subset data to a specific period of interest:
 ```{r}
 hot<-subset(data, Temp > 90)                    # days with avg. temp > 90 deg. F
@@ -359,16 +457,16 @@ data$Date<-as.Date(as.character(paste(data$Year, data$Month, data$Day,sep="-")),
 data<- subset(data, Date > as.Date("2012-03-31") & Date < as.Date("2013-04-01"))
 ```
 
-### Merge
+### merge
 R supports SQL-like join functionality with `merge`. Let's suppose we wish to merge our daily temperature data with energy consumption data for the city of Delhi. As we all know, urban energy use is driven in large part by thermal comfort (heating in the winter, and cooling in the summer). Peak demand, in particular, is highly correlated with air conditioning loads.  Let's look to see if this holds true for Delhi.
 
 First, we need to bring in the energy consumption data and perform requisite data cleaning/organization.
-Data description: regional grid operator data for the period April 1 2012 - March 31 2013 at 30-min timeslices  
-- Delhi Own Generation  
-- Schedule from Grid  
-- Drawal from Grid  
-- Total Demand Met  
-- Overdraw/Underdraw (OD/UD)  
+Data description: regional grid operator data for the period April 1 2012 - March 31 2013 at 30 minute timeslices  
+* Delhi Own Generation   
+* Schedule from Grid  
+* Drawal from Grid  
+* Total Demand Met  
+* Overdraw/Underdraw (OD/UD)  
 ```{r SLDC, cache=TRUE}
 # Import Delhi SLDC data
 library(xlsx)
@@ -459,7 +557,7 @@ There is a powerful replacement of `rbind` in the __plyr__ package, called `rbin
 #head(rbind.fill(data1, data2))
 ```
 
-### Writing out data
+### writing data
 Notice that none of our files have changed so far. If you open `sample_health_facilities.csv`, it is the same as it was. If after some work, we want to save our work, we have to write out our data.frames to the file. This is like hitting the "save" button in Excel, but it isn't done automatically in R; you have to do it expicitly.
 
 Writing csv works like the following:
@@ -468,8 +566,8 @@ Writing csv works like the following:
 ```
 Note the row.names argument. Try to see what the csv looks like if you omit the argument, or change row.names=TRUE. We generally prefer to output csv files without the row.names.
 
-Assignment:
-==========
+Assignment
+--------------
 Until tomorrow, please do the following activity:
  * Go to this link (http://bit.ly/1fj3sjD) and download the file into the working directory.
  * Produce a new dataset, which has the following properties:
